@@ -13,6 +13,7 @@ import tensorflow_hub as hub
 from tqdm import tqdm, trange
 
 imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
+imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
 
 
 #%%
@@ -184,8 +185,6 @@ def eval(model, ds):
         result = model.predict_on_batch(x)  # , training=False
         reses.append(result)
         labs.append(y)
-        if ind > 100:
-            break
     rss = np.concatenate(reses, axis=0)
     lbs = np.concatenate(labs, axis=0)
     return rss, lbs
