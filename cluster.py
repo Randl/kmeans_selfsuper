@@ -87,7 +87,7 @@ def print_metrics(y_pred, y_true,
 def train_pca(X_train):
     bs = max(4096, X_train.shape[1] * 2)
     transformer = IncrementalPCA(batch_size=bs)  #
-    for i, batch in enumerate(tqdm(batches(X_train, bs), total=len(X_train) // bs)):
+    for i, batch in enumerate(tqdm(batches(X_train, bs), total=len(X_train) // bs+1)):
         transformer = transformer.partial_fit(batch)
     print(transformer.explained_variance_ratio_.cumsum())
     return transformer
@@ -115,7 +115,7 @@ def transform_pca(X, transformer):
     n = max(4096, X.shape[1] * 2)
     for i in trange(0, len(X), n):
         X[i:i + n] = transformer.transform(X[i:i + n])
-        break
+        #break
     return X
 
 
@@ -131,7 +131,7 @@ if generate:
     cluster_data(X_train, y_train, X_test, y_test)
 else:
     n_components = 128
-    filename = 'results/resnet50_pca{}.npz'.format(n_components)
+    filename = 'results/resnet50_pca.npz'#'results/resnet50x4_pca.npz'
     if not os.path.exists(filename):
 
         t0 = time.time()
@@ -156,7 +156,7 @@ else:
         t1 = time.time()
         print('Loading time: {:.4f}'.format(t1 - t0))
         X_train, X_test = X_train[:, :n_components], X_test[:, :n_components]
-        cluster_data(X_train, y_train, X_test, y_test)
+    cluster_data(X_train, y_train, X_test, y_test)
 
 # ResNet50
 # k-means: 0.0370
@@ -164,3 +164,9 @@ else:
 # over (2): ARI 0.0936	V 0.6336	AMI 0.2520	FM 0.0969
 #
 # ACC TR L 0.2293	ACC TR M 0.2386	ACC VA L 0.2714	ACC VA M 0.2774
+
+# PCA + ResNet-50
+# ARI 0.1066	V 0.6182	AMI 0.3518	FM 0.1110
+#
+# ACC TR L 0.2325	ACC TR M 0.2546	ACC VA L 0.2534	ACC VA M 0.2769
+

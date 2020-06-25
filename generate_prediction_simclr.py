@@ -1,4 +1,4 @@
-# %%
+#%%
 
 import json
 import os
@@ -16,7 +16,7 @@ imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
 imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
 
 
-# %%
+#%%
 
 def download_file(url, filename=False, verbose=False):
     """
@@ -38,23 +38,23 @@ def download_file(url, filename=False, verbose=False):
     return
 
 
-# %%
+#%%
 
 # test
 IMAGE_SHAPE = (224, 224)
 train_dir = pathlib.Path(os.path.join(imagenet_path, 'train'))
 val_dir = pathlib.Path(os.path.join(imagenet_path, 'val'))
 
-# %%
+#%%
 
 assert val_dir.exists()
 assert train_dir.exists()
 
-# %%
+#%%
 
 CLASS_NAMES = np.array([item.name for item in train_dir.glob('*') if item.name != "LICENSE.txt"])
 
-# %%
+#%%
 
 
 map_url = 'https://s3.amazonaws.com/deep-learning-models/image-models/imagenet_class_index.json'
@@ -64,7 +64,7 @@ for r in response:
     name_map[response[r][0]] = response[r][1]
 
 
-# %%
+#%%
 
 
 def show_batch(image_batch, label_batch):
@@ -76,7 +76,7 @@ def show_batch(image_batch, label_batch):
         plt.axis('off')
 
 
-# %%
+#%%
 
 IMG_HEIGHT = 224
 IMG_WIDTH = 224
@@ -116,7 +116,7 @@ def prepare_for_eval(ds, batch_size):
     return ds
 
 
-# %%
+#%%
 
 
 def get_datasets():
@@ -136,12 +136,12 @@ def get_datasets():
     return train_ds, val_ds
 
 
-# %%
+#%%
 train_ds, val_ds = get_datasets()
 image_batch, label_batch = next(iter(train_ds))
 show_batch(image_batch.numpy(), label_batch.numpy())
 
-# %%
+#%%
 
 num_elements = tf.data.experimental.cardinality(train_ds).numpy()
 print(num_elements)
@@ -149,7 +149,7 @@ num_elements = tf.data.experimental.cardinality(val_ds).numpy()
 print(num_elements)
 
 
-# %%
+#%%
 def get_resnet50x4():
     resnet50x4_url = "https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip"
 
@@ -168,7 +168,7 @@ def get_resnet50x4():
     return resnet50x4
 
 
-# %%
+#%%
 def get_resnet50():
     resnet50_url = "https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip"
 
@@ -186,7 +186,7 @@ def get_resnet50():
     return resnet50
 
 
-# %%
+#%%
 def get_model(model='resnet50'):
     if model == 'resnet50':
         return get_resnet50()
@@ -194,7 +194,7 @@ def get_model(model='resnet50'):
         return get_resnet50x4()
 
 
-# %%
+#%%
 
 def eval(model, ds):
     dit = iter(ds)
