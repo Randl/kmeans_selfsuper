@@ -150,7 +150,7 @@ print(num_elements)
 
 
 #%%
-def get_resnet50x4():
+def get_resnet50x4_simclr():
     resnet50x4_url = "https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip"
 
     os.makedirs('./checkpoints', exist_ok=True)
@@ -169,7 +169,7 @@ def get_resnet50x4():
 
 
 #%%
-def get_resnet50():
+def get_resnet50_simclr():
     resnet50_url = "https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip"
 
     os.makedirs('./checkpoints', exist_ok=True)
@@ -187,11 +187,11 @@ def get_resnet50():
 
 
 #%%
-def get_model(model='resnet50'):
+def get_model(model='resnet50_simclr'):
     if model == 'resnet50':
-        return get_resnet50()
-    if model == 'resnet50x4':
-        return get_resnet50x4()
+        return get_resnet50_simclr()
+    if model == 'resnet50x4_simclr':
+        return get_resnet50x4_simclr()
 
 
 #%%
@@ -211,7 +211,7 @@ def eval(model, ds):
     return rss, lbs
 
 
-def eval_and_save(model='resnet50'):
+def eval_and_save(model='resnet50_simclr'):
     mdl = get_model(model)
     train_embs, train_labs = eval(mdl, train_ds)
     val_embs, val_labs = eval(mdl, val_ds)
@@ -220,4 +220,4 @@ def eval_and_save(model='resnet50'):
              val_labs=val_labs)
 
 
-eval_and_save('resnet50x4')
+eval_and_save('resnet50x4_simclr')

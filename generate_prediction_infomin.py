@@ -13,7 +13,7 @@ device, dtype = 'cuda:0', torch.float32
 
 def get_model(model='resnet50_infomin'):
     if model == 'resnet50_infomin':
-        parser = argparse.ArgumentParser(description='CPC')
+        parser = argparse.ArgumentParser(description='IM')
         args = parser.parse_args()
 
         args.jigsaw = True
@@ -22,6 +22,25 @@ def get_model(model='resnet50_infomin'):
         args.modal = 'RGB'
         model, _ = build_model(args)
         cp = torch.load('checkpoints/InfoMin_800.pth')
+
+        sd = cp['model']
+        new_sd = {}
+        for entry in sd:
+            new_sd[entry.replace('module.', '')] = sd[entry]
+        model.load_state_dict(new_sd, strict=False)  # no head, don't need linear model
+
+        model = model.to(device=device)
+        return model
+    if model == 'resnext152_infomin':
+        parser = argparse.ArgumentParser(description='IM')
+        args = parser.parse_args()
+
+        args.jigsaw = True
+        args.arch, args.head, args.feat_dim = 'resnext152v1', 'mlp', 128
+        args.mem = 'moco'
+        args.modal = 'RGB'
+        model, _ = build_model(args)
+        cp = torch.load('checkpoints/InfoMin_resnext152v1_e200.pth')
 
         sd = cp['model']
         new_sd = {}
@@ -43,7 +62,6 @@ def eval(model, loader):
         output = model.forward(data, mode=2)
         reses.append(output.detach().cpu().numpy())
         labs.append(target.detach().cpu().numpy())
-        break
 
     rss = np.concatenate(reses, axis=0)
     lbs = np.concatenate(labs, axis=0)
@@ -55,7 +73,8 @@ imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
 
 def eval_and_save(model='resnet50_infomin'):
     mdl = get_model(model)
-    train_loader, val_loader = get_loaders_imagenet(imagenet_path, 32, 32, 224, 8, 1, 0)
+    bs = 32 if model in ['resnet50_infomin'] else 16
+    train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, 224, 8, 1, 0)
     train_embs, train_labs = eval(mdl, train_loader)
     val_embs, val_labs = eval(mdl, val_loader)
     os.makedirs('./results', exist_ok=True)
@@ -63,4 +82,4 @@ def eval_and_save(model='resnet50_infomin'):
              val_labs=val_labs)
 
 
-eval_and_save('resnet50_infomin')
+eval_and_save('resnext152_infomin')

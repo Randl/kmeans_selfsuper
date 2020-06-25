@@ -1,3 +1,4 @@
+import argparse
 import gc
 import os
 import time
@@ -12,8 +13,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from tqdm import trange, tqdm
 
+model_names = set(filename.split('.')[0].replace('_pca', '') for filename in os.listdir('./results'))
+
+parser = argparse.ArgumentParser(description='IM')
+parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
+                    help='Model: one of' + ', '.join(model_names))
+parser.add_argument('--over', type=float, default=1., help='Mutiplier for number of clusters')
+args = parser.parse_args()
 n_classes = 1000
-n_clusters = 1 * n_classes  # https://arxiv.org/abs/2005.12320 -- overclustering
+n_clusters = args.over * n_classes
 train_size = 12811  # 67
 val_size = 500  # 00
 
@@ -46,7 +54,7 @@ def assign_classes_majority(C):
     col_ind = C.argmax(1)
     row_ind = np.arange(C.shape[0])
 
-    # for overclustering, rest is assigned to best matching class
+    # best matching class for every cluster
     mask = np.ones(C.shape[0], dtype=bool)
     mask[row_ind] = False
 
@@ -78,6 +86,7 @@ def print_metrics(y_pred, y_true,
     ami = sklearn.metrics.adjusted_mutual_info_score(y_true, y_pred)
     fm = sklearn.metrics.fowlkes_mallows_score(y_true, y_pred)
 
+    # TODO: check which classes are not assigned
     print("ARI {:.4f}\tV {:.4f}\tAMI {:.4f}\tFM {:.4f}\n".format(ari, v_measure, ami, fm))
     print("ACC TR L {:.4f}\tACC TR M {:.4f}\t"
           "ACC VA L {:.4f}\tACC VA M {:.4f}\n".format(acc_tr_lin, acc_tr_maj,
@@ -87,7 +96,7 @@ def print_metrics(y_pred, y_true,
 def train_pca(X_train):
     bs = max(4096, X_train.shape[1] * 2)
     transformer = IncrementalPCA(batch_size=bs)  #
-    for i, batch in enumerate(tqdm(batches(X_train, bs), total=len(X_train) // bs+1)):
+    for i, batch in enumerate(tqdm(batches(X_train, bs), total=len(X_train) // bs + 1)):
         transformer = transformer.partial_fit(batch)
     print(transformer.explained_variance_ratio_.cumsum())
     return transformer
@@ -115,7 +124,7 @@ def transform_pca(X, transformer):
     n = max(4096, X.shape[1] * 2)
     for i in trange(0, len(X), n):
         X[i:i + n] = transformer.transform(X[i:i + n])
-        #break
+        # break
     return X
 
 
@@ -131,18 +140,19 @@ if generate:
     cluster_data(X_train, y_train, X_test, y_test)
 else:
     n_components = 128
-    filename = 'results/resnet50_pca.npz'#'results/resnet50x4_pca.npz'
+    filename = 'results/' + args.model + '_pca.npz'
     if not os.path.exists(filename):
 
         t0 = time.time()
-        path = 'results/resnet50.npz'
+        path = 'results/' + args.model + '.npz'
         data = np.load(path)
         X_train, y_train, X_test, y_test = data['train_embs'], data['train_labs'], data['val_embs'], data['val_labs']
         t1 = time.time()
 
         print('Loading time: {:.4f}'.format(t1 - t0))
 
-        y_train, y_test = y_train.argmax(1), y_test.argmax(1)
+        if len(y_train.shape) > 1:
+            y_train, y_test = y_train.argmax(1), y_test.argmax(1)
         transformer = train_pca(X_train)
         X_train, X_test = transform_pca(X_train, transformer), transform_pca(X_test, transformer)
         gc.collect()
@@ -170,3 +180,19 @@ else:
 #
 # ACC TR L 0.2325	ACC TR M 0.2546	ACC VA L 0.2534	ACC VA M 0.2769
 
+
+# InfoMin
+# ARI 0.1443	V 0.6867	AMI 0.4803	FM 0.1595
+#
+# ACC TR L 0.3301	ACC TR M 0.3665	ACC VA L 0.3473	ACC VA M 0.3830
+
+# InfoMin large
+# ARI 0.2122	V 0.7198	AMI 0.5249	FM 0.2224
+#
+# ACC TR L 0.3761	ACC TR M 0.4152	ACC VA L 0.3952	ACC VA M 0.4296
+
+
+# over 4000
+# ARI 0.1692	V 0.7380	AMI 0.4029	FM 0.1973
+#
+# ACC TR L 0.4611	ACC TR M 0.4630	ACC VA L 0.5092	ACC VA M 0.5120
