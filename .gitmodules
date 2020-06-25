@@ -1,0 +1,3 @@
+[submodule "PyContrast"]
+	path = PyContrast
+	url = https://github.com/HobbitLong/PyContrast.git
