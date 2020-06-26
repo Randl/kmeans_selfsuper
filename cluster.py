@@ -13,15 +13,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from tqdm import trange, tqdm
 
+from visual_utils import confusion_mat
+
 model_names = set(filename.split('.')[0].replace('_pca', '') for filename in os.listdir('./results'))
 
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
                     help='Model: one of' + ', '.join(model_names))
 parser.add_argument('--over', type=float, default=1., help='Mutiplier for number of clusters')
+parser.add_argument('--n-components', type=int, default=None, help='Number of components for PCA')
 args = parser.parse_args()
+print(args)
+
 n_classes = 1000
-n_clusters = args.over * n_classes
+n_clusters = int(args.over * n_classes)
 train_size = 12811  # 67
 val_size = 500  # 00
 
@@ -139,7 +144,6 @@ if generate:
     print('Generation time: {:.4f}'.format(t1 - t0))
     cluster_data(X_train, y_train, X_test, y_test)
 else:
-    n_components = 128
     filename = 'results/' + args.model + '_pca.npz'
     if not os.path.exists(filename):
 
@@ -160,12 +164,15 @@ else:
     else:
         t0 = time.time()
         data = np.load(filename)
+        print(filename)
         X_train, y_train, X_test, y_test = data['train_embs'], data['train_labs'], data['val_embs'], data['val_labs']
         if len(y_train.shape) > 1:
             y_train, y_test = y_train.argmax(1), y_test.argmax(1)
         t1 = time.time()
         print('Loading time: {:.4f}'.format(t1 - t0))
-        X_train, X_test = X_train[:, :n_components], X_test[:, :n_components]
+    if args.n_components is not None:
+        X_train, X_test = X_train[:, :args.n_components], X_test[:, :args.n_components]
+
     cluster_data(X_train, y_train, X_test, y_test)
 
 # ResNet50
@@ -196,3 +203,8 @@ else:
 # ARI 0.1692	V 0.7380	AMI 0.4029	FM 0.1973
 #
 # ACC TR L 0.4611	ACC TR M 0.4630	ACC VA L 0.5092	ACC VA M 0.5120
+
+# full pca + over 5
+# ARI 0.1482	V 0.7468	AMI 0.3993	FM 0.1809
+#
+# ACC TR L 0.5110	ACC TR M 0.5117	ACC VA L 0.5550	ACC VA M 0.5566
