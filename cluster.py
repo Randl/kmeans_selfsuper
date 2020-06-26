@@ -45,12 +45,15 @@ def get_cost_matrix(y_pred, y):
     return C
 
 
-def get_cost_matrix_objectnet(y_pred, y, imagenet_to_objectnet):
-    C = np.zeros((y_pred.max() + 1, n_classes))
+def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
+    C = np.zeros((y_pred.max() + 1, y.max()+1))
+    ny, nyp = [], []
     for pred, label in zip(y_pred, y):
-        if imagenet_to_objectnet[label] > 0:
-            C[pred, imagenet_to_objectnet[label]] += 1
-    return C
+        if len(objectnet_to_imagenet[label]) > 0:
+            C[pred, label] += 1
+            ny.append(label)
+            nyp.append(pred)
+    return C, np.array(nyp), np.array(ny)
 
 
 def assign_classes_hungarian(C):
@@ -95,11 +98,10 @@ def batches(l, n):
         yield l[i:i + n]
 
 
-def print_metrics(message, y_pred, y_true,
-                  train_lin_assignment, train_maj_assignment,
-                  val_lin_assignment=None, val_maj_assignment=None, objectnet=True, imagenet_to_objectnet=None):
+def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assignment, val_lin_assignment=None,
+                  val_maj_assignment=None, objectnet=False, imagenet_to_objectnet=None, objectnet_to_imagenet=None):
     if objectnet:
-        C = get_cost_matrix_objectnet(y_pred, y_true, imagenet_to_objectnet)
+        C, y_pred, y_true = get_cost_matrix_objectnet(y_pred, y_true, objectnet_to_imagenet)
 
         train_lin_assignment = imagenet_assignment_to_objectnet(*train_lin_assignment, imagenet_to_objectnet)
         train_maj_assignment = imagenet_assignment_to_objectnet(*train_maj_assignment, imagenet_to_objectnet)
@@ -136,7 +138,7 @@ def train_pca(X_train):
     return transformer
 
 
-def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet):
+def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet):
     minib_k_means = cluster.MiniBatchKMeans(n_clusters=n_clusters, batch_size=batch_size, max_no_improvement=None)
 
     for e in trange(epochs):
@@ -151,12 +153,13 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
         C_val = get_cost_matrix(y_pred, y_test)
 
         y_pred2 = minib_k_means.predict(X_test2)
-        C_val2 = get_cost_matrix_objectnet(y_pred, y, imagenet_to_objectnet)
+        C_val2, _, _ = get_cost_matrix_objectnet(y_pred2, y_test2, objectnet_to_imagenet)
 
         print_metrics('val', y_pred, y_test, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
                       assign_classes_hungarian(C_val), assign_classes_majority(C_val))
         print_metrics('on', y_pred2, y_test2, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
-                      assign_classes_hungarian(C_val2), assign_classes_majority(C_val2), True)
+                      assign_classes_hungarian(C_val2), assign_classes_majority(C_val2), objectnet=True,
+                      imagenet_to_objectnet=imagenet_to_objectnet, objectnet_to_imagenet=objectnet_to_imagenet)
 
 
 def cluster_training_data(X_train, y_train):
@@ -229,7 +232,7 @@ else:
     objectnet_path = '/home/chaimb/objectnet-1.0'
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(
         objectnet_path, 16, 224, 8, 1, 0)
-    cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet)
+    cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet)
     cluster_training_data(X_test2, y_test2)
 
 # ResNet50
