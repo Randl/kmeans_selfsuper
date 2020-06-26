@@ -76,8 +76,8 @@ def get_loaders_objectnet(dataroot, val_batch_size, input_size, workers, num_nod
     val_sampler = DistributedSampler(val_data, num_nodes, local_rank)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=val_batch_size, sampler=val_sampler,
                                              num_workers=workers, pin_memory=pin_memory)
-    imagenet_to_objectnet, objectnet_to_imagenet = objectnet_imagenet_mappings(dataroot, val_data)
-    return val_loader, imagenet_to_objectnet, objectnet_to_imagenet
+    imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = objectnet_imagenet_mappings(dataroot, val_data)
+    return val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both
 
 
 def objectnet_imagenet_mappings(dataroot, object_data):
@@ -89,7 +89,7 @@ def objectnet_imagenet_mappings(dataroot, object_data):
 
     imagenet_to_pytorch = [0 for _ in range(1000)]
     for pt in pytorch_to_imagenet:
-        print(pytorch_to_imagenet[pt], pt)
+        # print(pytorch_to_imagenet[pt], pt)
         imagenet_to_pytorch[pytorch_to_imagenet[pt]] = int(pt)
 
     imagenet_to_name = []
@@ -103,20 +103,23 @@ def objectnet_imagenet_mappings(dataroot, object_data):
         name_to_imagenet[cl] = i
 
     cnt_both, cnt = 0, 0
+    objectnet_both = []
+    imagenet_both = []
     for cl in object_data.class_to_idx:
         obj = folder_to_object[cl]
         if obj in object_to_imagenet:
             imagenet_classes = [s.strip() for s in object_to_imagenet[obj].split(';')]
             pt_classes = [imagenet_to_pytorch[name_to_imagenet[ic]] for ic in imagenet_classes]
             objectnet_to_imagenet[object_data.class_to_idx[cl]] = pt_classes
-            print(cl, folder_to_object[cl], object_to_imagenet[obj],
-                  [imagenet_to_pytorch[name_to_imagenet[ic]] for ic in imagenet_classes])
+            # print(cl, folder_to_object[cl], object_to_imagenet[obj],  [imagenet_to_pytorch[name_to_imagenet[ic]] for ic in imagenet_classes])
             cnt_both += 1
+            objectnet_both.append(object_data.class_to_idx[cl])
             for icl in pt_classes:
+                imagenet_both.append(icl)
                 imagenet_to_objectnet[icl] = object_data.class_to_idx[cl]
         else:
             objectnet_to_imagenet[object_data.class_to_idx[cl]] = []
-            print(cl, folder_to_object[cl])
+            # print(cl, folder_to_object[cl])
             cnt += 1
 
-    return imagenet_to_objectnet, objectnet_to_imagenet
+    return imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both

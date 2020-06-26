@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from PyContrast.pycontrast.networks.build_backbone import build_model
-from torch_utils import get_loaders_imagenet
+from torch_utils import get_loaders_imagenet, get_loaders_objectnet
 
 device, dtype = 'cuda:0', torch.float32
 
@@ -90,16 +90,19 @@ def eval(model, loader):
 
 imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
 imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
+objectnet_path = '/home/chaimb/objectnet-1.0'
 
 def eval_and_save(model='resnet50_infomin'):
     mdl = get_model(model)
     bs = 32 if model in ['resnet50_infomin'] else 16
     train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, 224, 8, 1, 0)
+    obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, bs, 224, 8, 1, 0)
     train_embs, train_labs = eval(mdl, train_loader)
     val_embs, val_labs = eval(mdl, val_loader)
+    obj_embs, obj_labs = eval(mdl, obj_loader)
     os.makedirs('./results', exist_ok=True)
     np.savez(os.path.join('./results', model + '.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
-             val_labs=val_labs)
+             val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 
 eval_and_save('resnext152_infomin')
