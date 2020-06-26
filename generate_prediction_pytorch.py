@@ -50,6 +50,26 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
+    if model == 'MoCov2':
+        parser = argparse.ArgumentParser(description='IM')
+        args = parser.parse_args()
+
+        args.jigsaw = False
+        args.arch, args.head, args.feat_dim = 'resnet50', 'linear', 128
+        args.mem = 'moco'
+        args.modal = 'RGB'
+        model, _ = build_model(args)
+        cp = torch.load('checkpoints/InfoMin_resnext152v1_e200.pth')
+
+        sd = cp['model']
+        new_sd = {}
+        for entry in sd:
+            new_sd[entry.replace('module.', '')] = sd[entry]
+        model.load_state_dict(new_sd, strict=False)  # no head, don't need linear model
+
+        model = model.to(device=device)
+        return model
+
 
 
 def eval(model, loader):
