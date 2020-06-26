@@ -181,7 +181,7 @@ def get_resnet50_simclr():
 def get_revnet50x4_bigbigan():
     module_path = 'https://tfhub.dev/deepmind/bigbigan-revnet50x4/1'  # RevNet-50 x4
     revnet50x4 = tf.keras.Sequential([
-        hub.KerasLayer(hub.Module(module_path), signature='encode')
+        hub.KerasLayer(module_path, signature='encode')
     ])
 
     return revnet50x4
