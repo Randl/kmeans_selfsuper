@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 import zipfile
+from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -78,10 +79,6 @@ def show_batch(image_batch, label_batch):
 
 #%%
 
-IMG_HEIGHT = 224
-IMG_WIDTH = 224
-
-
 def get_label(file_path):
     # convert the path to a list of path components
     parts = tf.strings.split(file_path, os.path.sep)
@@ -89,20 +86,26 @@ def get_label(file_path):
     return parts[-2] == CLASS_NAMES
 
 
-def decode_img(img):
+def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
     # convert the compressed string to a 3D uint8 tensor
     img = tf.image.decode_jpeg(img, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
-    img = tf.image.convert_image_dtype(img, tf.float32)
+    if pm1:
+        img = tf.cast(img, tf.float32) / (255. / 2.) - 1
+    else:
+        img = tf.image.convert_image_dtype(img, tf.float32)
     # resize the image to the desired size.
     return tf.image.resize(img, [IMG_HEIGHT, IMG_WIDTH])
 
 
-def process_path(file_path):
+def process_path(file_path, bbg=False):
     label = get_label(file_path)
     # load the raw data from the file as a string
     img = tf.io.read_file(file_path)
-    img = decode_img(img)
+    if bbg:
+        img = decode_img(img, 256, 256, True)
+    else:
+        img = decode_img(img)
     return img, label
 
 
@@ -119,34 +122,22 @@ def prepare_for_eval(ds, batch_size):
 #%%
 
 
-def get_datasets():
+def get_datasets(bbg=False):
     BATCH_SIZE = 32
+    process = partial(process_path, bbg=bbg)
 
     list_ds = tf.data.Dataset.list_files(str(train_dir / '*/*'))
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
-    labeled_ds = list_ds.map(process_path, num_parallel_calls=8)
+    labeled_ds = list_ds.map(process, num_parallel_calls=8)
 
     train_ds = prepare_for_eval(labeled_ds, BATCH_SIZE)
 
     list_val_ds = tf.data.Dataset.list_files(str(val_dir / '*/*'))
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
-    labeled_val_ds = list_val_ds.map(process_path, num_parallel_calls=8)
+    labeled_val_ds = list_val_ds.map(process, num_parallel_calls=8)
 
     val_ds = prepare_for_eval(labeled_val_ds, BATCH_SIZE)
     return train_ds, val_ds
-
-
-#%%
-train_ds, val_ds = get_datasets()
-image_batch, label_batch = next(iter(train_ds))
-show_batch(image_batch.numpy(), label_batch.numpy())
-
-#%%
-
-num_elements = tf.data.experimental.cardinality(train_ds).numpy()
-print(num_elements)
-num_elements = tf.data.experimental.cardinality(val_ds).numpy()
-print(num_elements)
 
 
 #%%
@@ -187,11 +178,23 @@ def get_resnet50_simclr():
 
 
 #%%
+def get_revnet50x4_bigbigan():
+    module_path = 'https://tfhub.dev/deepmind/bigbigan-revnet50x4/1'  # RevNet-50 x4
+    revnet50x4 = tf.keras.Sequential([
+        hub.KerasLayer(hub.Module(module_path), signature='encode')
+    ])
+
+    return revnet50x4
+
+
+#%%
 def get_model(model='resnet50_simclr'):
     if model == 'resnet50':
         return get_resnet50_simclr()
     if model == 'resnet50x4_simclr':
         return get_resnet50x4_simclr()
+    if model == 'revnet50x4_bigbigan':
+        return get_revnet50x4_bigbigan()
 
 
 #%%
@@ -211,6 +214,22 @@ def eval(model, ds):
     return rss, lbs
 
 
+#%%
+model = 'revnet50x4_bigbigan'
+#%%
+train_ds, val_ds = get_datasets(bbg=model in ['revnet50x4_bigbigan'])
+image_batch, label_batch = next(iter(train_ds))
+show_batch(image_batch.numpy(), label_batch.numpy())
+
+#%%
+
+num_elements = tf.data.experimental.cardinality(train_ds).numpy()
+print(num_elements)
+num_elements = tf.data.experimental.cardinality(val_ds).numpy()
+print(num_elements)
+
+
+#%%
 def eval_and_save(model='resnet50_simclr'):
     mdl = get_model(model)
     train_embs, train_labs = eval(mdl, train_ds)
@@ -220,4 +239,4 @@ def eval_and_save(model='resnet50_simclr'):
              val_labs=val_labs)
 
 
-eval_and_save('resnet50x4_simclr')
+eval_and_save(model)
