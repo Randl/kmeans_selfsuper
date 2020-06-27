@@ -230,8 +230,9 @@ else:
                                                                                                   :args.n_components]
 
     objectnet_path = '/home/chaimb/objectnet-1.0'
+    imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(
-        objectnet_path, 16, 224, 8, 1, 0)
+        objectnet_path, imagenet_path, 16, 224, 8, 1, 0)
     cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet)
     cluster_training_data(X_test2, y_test2)
 
