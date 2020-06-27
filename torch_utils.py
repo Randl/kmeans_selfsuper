@@ -72,7 +72,7 @@ def get_loaders_objectnet(dataroot, imagenet_dataroot, val_batch_size, input_siz
     # TODO: pin-memory currently broken for distributed
     pin_memory = False
     # TODO: datasets.ImageNet
-    val_data_im = datasets.ImageFolder(root=os.path.join(dataroot, 'val'),
+    val_data_im = datasets.ImageFolder(root=os.path.join(imagenet_dataroot, 'val'),
                                        transform=get_transform_imagenet(False, input_size))
     # TODO: datasets.ImageNet
     val_data = datasets.ImageFolder(root=os.path.join(dataroot, 'images'),
@@ -101,7 +101,6 @@ def objectnet_imagenet_mappings(dataroot, object_data, imagenet_data):
         name_to_syn[response[r][1]] = response[r][0]
         # print(response[r][1].replace('_',' '))
         name_to_num[response[r][1].replace('_', ' ')] = imagenet_data.class_to_idx[response[r][0]]
-
 
     imagenet_to_name = []
     imagenet_to_objectnet = - np.ones(1000, dtype=int)
