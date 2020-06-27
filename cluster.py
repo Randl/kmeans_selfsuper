@@ -37,16 +37,37 @@ epochs = 60
 n_features = 2048
 batch_size = max(2048, int(2 ** np.ceil(np.log2(n_clusters))))
 
+import zipfile
+import io
 
-def get_cost_matrix(y_pred, y):
-    C = np.zeros((y_pred.max() + 1, y.max() + 1))
+
+def saveCompressed(fh, **namedict):
+    print('startsave')
+    with zipfile.ZipFile(fh,
+                         mode="w",
+                         compression=zipfile.ZIP_DEFLATED,
+                         allowZip64=True) as zf:
+        for k, v in namedict.items():
+            buf = io.BytesIO()
+            print(type(v))
+            np.lib.npyio.format.write_array(buf,
+                                            np.asanyarray(v),
+                                            allow_pickle=False)
+            zf.writestr(k + '.npy',
+                        buf.getvalue())
+            del v
+            gc.collect()
+
+
+def get_cost_matrix(y_pred, y, nc=1000):
+    C = np.zeros((nc, y.max() + 1))
     for pred, label in zip(y_pred, y):
         C[pred, label] += 1
     return C
 
 
 def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
-    C = np.zeros((y_pred.max() + 1, y.max()+1))
+    C = np.zeros((n_clusters, y.max()+1))
     ny, nyp = [], []
     for pred, label in zip(y_pred, y):
         if len(objectnet_to_imagenet[label]) > 0:
@@ -128,6 +149,16 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
     print("{}:ACC TR L {:.4f}\tACC TR M {:.4f}\t"
           "ACC VA L {:.4f}\tACC VA M {:.4f}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
 
+    if message=='ont': #TODO
+        both = np.zeros(313, dtype=bool)
+        y = [s for s in objectnet_to_imagenet if len(objectnet_to_imagenet[s]) > 0]
+        both[y] = 1
+
+        ri, ci = train_lin_assignment
+        acc_both = accuracy_from_assignment(C, ri[both], ci[both], len(y_true))
+        acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], len(y_true))
+        print("{}:ACC both {:.4f}\tACC obj {:.4f}".format(message, acc_both, acc_obj))
+
 
 def train_pca(X_train):
     bs = max(4096, X_train.shape[1] * 2)
@@ -162,7 +193,7 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
                       imagenet_to_objectnet=imagenet_to_objectnet, objectnet_to_imagenet=objectnet_to_imagenet)
 
 
-def cluster_training_data(X_train, y_train):
+def cluster_training_data(X_train, y_train,objectnet_to_imagenet):
     minib_k_means = cluster.MiniBatchKMeans(n_clusters=n_clusters_objectnet, batch_size=batch_size,
                                             max_no_improvement=None)
 
@@ -172,9 +203,9 @@ def cluster_training_data(X_train, y_train):
             minib_k_means = minib_k_means.partial_fit(batch)
 
         pred = minib_k_means.predict(X_train)
-        C_train = get_cost_matrix(pred, y_train)
+        C_train = get_cost_matrix(pred, y_train, nc=313)
 
-        print_metrics('ont', pred, y_train, assign_classes_hungarian(C_train), assign_classes_majority(C_train))
+        print_metrics('ont', pred, y_train, assign_classes_hungarian(C_train), assign_classes_majority(C_train),objectnet_to_imagenet=objectnet_to_imagenet)
 
 
 def transform_pca(X, transformer):
@@ -234,7 +265,7 @@ else:
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(
         objectnet_path, imagenet_path, 16, 224, 8, 1, 0)
     cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet)
-    cluster_training_data(X_test2, y_test2)
+    cluster_training_data(X_test2, y_test2,objectnet_to_imagenet)
 
 # ResNet50
 # k-means: 0.0370
