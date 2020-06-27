@@ -61,8 +61,10 @@ CLASS_NAMES = np.array([item.name for item in train_dir.glob('*') if item.name !
 map_url = 'https://s3.amazonaws.com/deep-learning-models/image-models/imagenet_class_index.json'
 response = json.loads(requests.get(map_url).text)
 name_map = {}
+name_to_num = {}
 for r in response:
     name_map[response[r][0]] = response[r][1]
+    name_to_num[response[r][1]] =  response[r][0]
 
 
 #%%
@@ -178,6 +180,16 @@ def get_resnet50_simclr():
 
 
 #%%
+def get_resnet152x3_simclrv2():
+    module_path = 'gs://simclr-checkpoints/simclrv2/pretrained/r152_3x_sk1/hub/'  # r152_3x_sk1
+    resnet152x3 = tf.keras.Sequential([
+        hub.KerasLayer(module_path)
+    ])
+    print(resnet152x3)
+    return resnet152x3
+
+
+#%%
 def get_revnet50x4_bigbigan():
     module_path = 'https://tfhub.dev/deepmind/bigbigan-revnet50x4/1'  # RevNet-50 x4
     revnet50x4 = tf.keras.Sequential([
@@ -191,10 +203,14 @@ def get_revnet50x4_bigbigan():
 def get_model(model='resnet50_simclr'):
     if model == 'resnet50':
         return get_resnet50_simclr()
-    if model == 'resnet50x4_simclr':
+    elif model == 'resnet50x4_simclr':
         return get_resnet50x4_simclr()
-    if model == 'revnet50x4_bigbigan':
+    elif model == 'revnet50x4_bigbigan':
         return get_revnet50x4_bigbigan()
+    elif model == 'resnet152x3_simclr2':
+        return get_resnet152x3_simclrv2()
+    else:
+        raise ValueError('Wrong model')
 
 
 #%%
@@ -207,6 +223,7 @@ def eval(model, ds):
     for ind in trange(num_elements):
         x, y = next(dit)
         result = model.predict_on_batch(x)  # , training=False
+        print(result.shape)
         reses.append(result)
         labs.append(y)
     rss = np.concatenate(reses, axis=0)
@@ -215,7 +232,7 @@ def eval(model, ds):
 
 
 #%%
-model = 'revnet50x4_bigbigan'
+model = 'resnet152x3_simclr2'
 #%%
 train_ds, val_ds = get_datasets(bbg=model in ['revnet50x4_bigbigan'])
 image_batch, label_batch = next(iter(train_ds))
