@@ -50,7 +50,7 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
-    if model == 'MoCov2':
+    if model == 'resnet50_mocov2':
         parser = argparse.ArgumentParser(description='IM')
         args = parser.parse_args()
 
@@ -69,7 +69,6 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
-
 
 
 def eval(model, loader):
@@ -92,6 +91,7 @@ imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
 imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
 objectnet_path = '/home/chaimb/objectnet-1.0'
 
+
 def eval_and_save(model='resnet50_infomin'):
     mdl = get_model(model)
     bs = 32 if model in ['resnet50_infomin'] else 16
@@ -105,4 +105,11 @@ def eval_and_save(model='resnet50_infomin'):
              val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 
-eval_and_save('resnext152_infomin')
+models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2']
+
+parser = argparse.ArgumentParser(description='IM')
+parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
+                    help='Model: one of' + ', '.join(models))
+args = parser.parse_args()
+
+eval_and_save(args.model)

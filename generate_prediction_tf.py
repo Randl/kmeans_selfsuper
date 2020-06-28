@@ -1,5 +1,5 @@
 #%%
-
+import argparse
 import json
 import os
 import pathlib
@@ -200,6 +200,22 @@ def get_resnet152x3_simclrv2():
     return resnet152x3
 
 
+def get_resnet50_simclrv2():
+    module_path = 'gs://simclr-checkpoints/simclrv2/pretrained/r50_1x_sk0/hub/'  # r152_3x_sk1
+    resnet152x3 = tf.keras.Sequential([
+        hub.KerasLayer(module_path)
+    ])
+    return resnet152x3
+
+
+def get_resnet152_simclrv2():
+    module_path = 'gs://simclr-checkpoints/simclrv2/pretrained/r152_1x_sk1/hub/'  # r152_3x_sk1
+    resnet152x3 = tf.keras.Sequential([
+        hub.KerasLayer(module_path)
+    ])
+    return resnet152x3
+
+
 #%%
 def get_revnet50x4_bigbigan():
     module_path = 'https://tfhub.dev/deepmind/bigbigan-revnet50x4/1'  # RevNet-50 x4
@@ -211,13 +227,21 @@ def get_revnet50x4_bigbigan():
 
 
 #%%
+models = ['resnet50_simclr', 'resnet50x4_simclr', 'revnet50x4_bigbigan', 'resnet50_simclr2', 'resnet152_simclr2',
+          'resnet152x3_simclr2']
+
+
 def get_model(model='resnet50_simclr'):
-    if model == 'resnet50':
+    if model == 'resnet50_simclr':
         return get_resnet50_simclr()
     elif model == 'resnet50x4_simclr':
         return get_resnet50x4_simclr()
     elif model == 'revnet50x4_bigbigan':
         return get_revnet50x4_bigbigan()
+    elif model == 'resnet50_simclr2':
+        return get_resnet50_simclrv2()
+    elif model == 'resnet152_simclr2':
+        return get_resnet152_simclrv2()
     elif model == 'resnet152x3_simclr2':
         return get_resnet152x3_simclrv2()
     else:
@@ -242,7 +266,13 @@ def eval(model, ds):
 
 
 #%%
-model = 'resnet152x3_simclr2'
+
+parser = argparse.ArgumentParser(description='IM')
+parser.add_argument('--model', dest='model', type=str, default='resnet50_simclr2',
+                    help='Model: one of' + ', '.join(models))
+args = parser.parse_args()
+
+model = args.model
 #%%
 train_ds, val_ds, obj_ds = get_datasets(bbg=model in ['revnet50x4_bigbigan'])
 image_batch, label_batch = next(iter(train_ds))
