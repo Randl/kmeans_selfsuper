@@ -37,27 +37,6 @@ epochs = 60
 n_features = 2048
 batch_size = max(2048, int(2 ** np.ceil(np.log2(n_clusters))))
 
-import zipfile
-import io
-
-
-def saveCompressed(fh, **namedict):
-    print('startsave')
-    with zipfile.ZipFile(fh,
-                         mode="w",
-                         compression=zipfile.ZIP_DEFLATED,
-                         allowZip64=True) as zf:
-        for k, v in namedict.items():
-            buf = io.BytesIO()
-            print(type(v))
-            np.lib.npyio.format.write_array(buf,
-                                            np.asanyarray(v),
-                                            allow_pickle=False)
-            zf.writestr(k + '.npy',
-                        buf.getvalue())
-            del v
-            gc.collect()
-
 
 def get_cost_matrix(y_pred, y, nc=1000):
     C = np.zeros((nc, y.max() + 1))
@@ -67,7 +46,7 @@ def get_cost_matrix(y_pred, y, nc=1000):
 
 
 def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
-    C = np.zeros((n_clusters, y.max()+1))
+    C = np.zeros((n_clusters, y.max() + 1))
     ny, nyp = [], []
     for pred, label in zip(y_pred, y):
         if len(objectnet_to_imagenet[label]) > 0:
@@ -111,7 +90,7 @@ def imagenet_assignment_to_objectnet(row_ind, col_ind, imagenet_to_objectnet):
 
 def accuracy_from_assignment(C, row_ind, col_ind, set_size=None):
     if set_size is None:
-        set_size=C.sum()
+        set_size = C.sum()
     cnt = C[row_ind, col_ind].sum()
     return cnt / set_size
 
@@ -125,7 +104,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
                   val_maj_assignment=None, objectnet=False, imagenet_to_objectnet=None, objectnet_to_imagenet=None):
     if objectnet:
         C, y_pred, y_true = get_cost_matrix_objectnet(y_pred, y_true, objectnet_to_imagenet)
-
+        # print(C.sum(), C)
         train_lin_assignment = imagenet_assignment_to_objectnet(*train_lin_assignment, imagenet_to_objectnet)
         train_maj_assignment = imagenet_assignment_to_objectnet(*train_maj_assignment, imagenet_to_objectnet)
     else:
@@ -148,12 +127,11 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
     ami = sklearn.metrics.adjusted_mutual_info_score(y_true, y_pred)
     fm = sklearn.metrics.fowlkes_mallows_score(y_true, y_pred)
 
-    # TODO: check which classes are not assigned
-    print("{}: ARI {:.4f}\tV {:.4f}\tAMI {:.4f}\tFM {:.4f}".format(message, ari, v_measure, ami, fm))
-    print("{}: ACC TR L {:.4f}\tACC TR M {:.4f}\t"
-          "ACC VA L {:.4f}\tACC VA M {:.4f}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
+    print("{}: ARI {:.6f}\tV {:.6f}\tAMI {:.6f}\tFM {:.6f}".format(message, ari, v_measure, ami, fm))
+    print("{}: ACC TR L {:.6f}\tACC TR M {:.6f}\t"
+          "ACC VA L {:.6f}\tACC VA M {:.6f}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
 
-    if message=='ont': #TODO
+    if message == 'ont':  # TODO
         both = np.zeros(313, dtype=bool)
         y = [s for s in objectnet_to_imagenet if len(objectnet_to_imagenet[s]) > 0]
         both[y] = 1
@@ -161,7 +139,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
         ri, ci = train_lin_assignment
         acc_both = accuracy_from_assignment(C, ri[both], ci[both], C[:, ci[both]].sum())
         acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], C[:, ci[~both]].sum())
-        print("{}: ACC both {:.4f}\tACC obj {:.4f}".format(message, acc_both, acc_obj))
+        print("{}: ACC both {:.6f}\tACC obj {:.6f}".format(message, acc_both, acc_obj))
 
 
 def train_pca(X_train):
@@ -169,6 +147,7 @@ def train_pca(X_train):
     transformer = IncrementalPCA(batch_size=bs)  #
     for i, batch in enumerate(tqdm(batches(X_train, bs), total=len(X_train) // bs + 1)):
         transformer = transformer.partial_fit(batch)
+        # break
     print(transformer.explained_variance_ratio_.cumsum())
     return transformer
 
@@ -197,7 +176,7 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
                       imagenet_to_objectnet=imagenet_to_objectnet, objectnet_to_imagenet=objectnet_to_imagenet)
 
 
-def cluster_training_data(X_train, y_train,objectnet_to_imagenet):
+def cluster_training_data(X_train, y_train, objectnet_to_imagenet):
     minib_k_means = cluster.MiniBatchKMeans(n_clusters=n_clusters_objectnet, batch_size=batch_size,
                                             max_no_improvement=None)
 
@@ -209,7 +188,8 @@ def cluster_training_data(X_train, y_train,objectnet_to_imagenet):
         pred = minib_k_means.predict(X_train)
         C_train = get_cost_matrix(pred, y_train, nc=313)
 
-        print_metrics('ont', pred, y_train, assign_classes_hungarian(C_train), assign_classes_majority(C_train),objectnet_to_imagenet=objectnet_to_imagenet)
+        print_metrics('ont', pred, y_train, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
+                      objectnet_to_imagenet=objectnet_to_imagenet)
 
 
 def transform_pca(X, transformer):
@@ -228,7 +208,7 @@ if generate:
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=val_size, random_state=42)
     t1 = time.time()
 
-    print('Generation time: {:.4f}'.format(t1 - t0))
+    print('Generation time: {:.6f}'.format(t1 - t0))
     cluster_data(X_train, y_train, X_test, y_test)
 else:
     filename = 'results/' + args.model + '_pca.npz'
@@ -241,7 +221,7 @@ else:
                                                              data['val_labs'], data['obj_embs'], data['obj_labs']
         t1 = time.time()
         print(path)
-        print('Loading time: {:.4f}'.format(t1 - t0))
+        print('Loading time: {:.6f}'.format(t1 - t0))
 
         if len(y_train.shape) > 1:
             y_train, y_test = y_train.argmax(1), y_test.argmax(1)
@@ -259,7 +239,7 @@ else:
         if len(y_train.shape) > 1:
             y_train, y_test = y_train.argmax(1), y_test.argmax(1)
         t1 = time.time()
-        print('Loading time: {:.4f}'.format(t1 - t0))
+        print('Loading time: {:.6f}'.format(t1 - t0))
     if args.n_components is not None:
         X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,
                                                                                                   :args.n_components]
@@ -269,40 +249,4 @@ else:
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(
         objectnet_path, imagenet_path, 16, 224, 8, 1, 0)
     cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet)
-    cluster_training_data(X_test2, y_test2,objectnet_to_imagenet)
-
-# first scenario: train on imagenet, validate on ObjectNet, calculate accuracy only for samples from known classes
-# first scenario: train on objectnet, validate on ObjectNet
-# ResNet50
-# k-means: 0.0370
-# PCA+k-means: 0.223
-# over (2): ARI 0.0936	V 0.6336	AMI 0.2520	FM 0.0969
-#
-# ACC TR L 0.2293	ACC TR M 0.2386	ACC VA L 0.2714	ACC VA M 0.2774
-
-# PCA + ResNet-50
-# ARI 0.1066	V 0.6182	AMI 0.3518	FM 0.1110
-#
-# ACC TR L 0.2325	ACC TR M 0.2546	ACC VA L 0.2534	ACC VA M 0.2769
-
-
-# InfoMin
-# ARI 0.1443	V 0.6867	AMI 0.4803	FM 0.1595
-#
-# ACC TR L 0.3301	ACC TR M 0.3665	ACC VA L 0.3473	ACC VA M 0.3830
-
-# InfoMin large
-# ARI 0.2122	V 0.7198	AMI 0.5249	FM 0.2224
-#
-# ACC TR L 0.3761	ACC TR M 0.4152	ACC VA L 0.3952	ACC VA M 0.4296
-
-
-# over 4000
-# ARI 0.1692	V 0.7380	AMI 0.4029	FM 0.1973
-#
-# ACC TR L 0.4611	ACC TR M 0.4630	ACC VA L 0.5092	ACC VA M 0.5120
-
-# full pca + over 5
-# ARI 0.1482	V 0.7468	AMI 0.3993	FM 0.1809
-#
-# ACC TR L 0.5110	ACC TR M 0.5117	ACC VA L 0.5550	ACC VA M 0.5566
+    cluster_training_data(X_test2, y_test2, objectnet_to_imagenet)
