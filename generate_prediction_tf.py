@@ -197,7 +197,6 @@ def get_resnet152x3_simclrv2():
     resnet152x3 = tf.keras.Sequential([
         hub.KerasLayer(module_path)
     ])
-    print(resnet152x3)
     return resnet152x3
 
 
@@ -235,7 +234,6 @@ def eval(model, ds):
     for ind in trange(num_elements):
         x, y = next(dit)
         result = model.predict_on_batch(x)  # , training=False
-        print(result.shape)
         reses.append(result)
         labs.append(y)
     rss = np.concatenate(reses, axis=0)

@@ -109,9 +109,11 @@ def imagenet_assignment_to_objectnet(row_ind, col_ind, imagenet_to_objectnet):
     return np.array(nri), np.array(nci)
 
 
-def accuracy_from_assignment(C, row_ind, col_ind, set_size):
+def accuracy_from_assignment(C, row_ind, col_ind, set_size=None):
+    if set_size is None:
+        set_size=C.sum()
     cnt = C[row_ind, col_ind].sum()
-    return cnt / C.sum()
+    return cnt / set_size
 
 
 def batches(l, n):
@@ -129,11 +131,13 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
     else:
         C = get_cost_matrix(y_pred, y_true)
 
-    acc_tr_lin = accuracy_from_assignment(C, *train_lin_assignment, len(y_true))
-    acc_tr_maj = accuracy_from_assignment(C, *train_maj_assignment, len(y_true))
+    # for r,c in zip(*train_lin_assignment):
+    #     print(r,c)
+    acc_tr_lin = accuracy_from_assignment(C, *train_lin_assignment)
+    acc_tr_maj = accuracy_from_assignment(C, *train_maj_assignment)
     if val_lin_assignment is not None:
-        acc_va_lin = accuracy_from_assignment(C, *val_lin_assignment, len(y_true))
-        acc_va_maj = accuracy_from_assignment(C, *val_maj_assignment, len(y_true))
+        acc_va_lin = accuracy_from_assignment(C, *val_lin_assignment)
+        acc_va_maj = accuracy_from_assignment(C, *val_maj_assignment)
     else:
         acc_va_lin, acc_va_maj = 0, 0
 
@@ -146,7 +150,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
 
     # TODO: check which classes are not assigned
     print("{}: ARI {:.4f}\tV {:.4f}\tAMI {:.4f}\tFM {:.4f}".format(message, ari, v_measure, ami, fm))
-    print("{}:ACC TR L {:.4f}\tACC TR M {:.4f}\t"
+    print("{}: ACC TR L {:.4f}\tACC TR M {:.4f}\t"
           "ACC VA L {:.4f}\tACC VA M {:.4f}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
 
     if message=='ont': #TODO
@@ -155,9 +159,9 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
         both[y] = 1
 
         ri, ci = train_lin_assignment
-        acc_both = accuracy_from_assignment(C, ri[both], ci[both], len(y_true))
-        acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], len(y_true))
-        print("{}:ACC both {:.4f}\tACC obj {:.4f}".format(message, acc_both, acc_obj))
+        acc_both = accuracy_from_assignment(C, ri[both], ci[both], C[:, ci[both]].sum())
+        acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], C[:, ci[~both]].sum())
+        print("{}: ACC both {:.4f}\tACC obj {:.4f}".format(message, acc_both, acc_obj))
 
 
 def train_pca(X_train):
@@ -236,7 +240,7 @@ else:
         X_train, y_train, X_test, y_test, X_test2, y_test2 = data['train_embs'], data['train_labs'], data['val_embs'], \
                                                              data['val_labs'], data['obj_embs'], data['obj_labs']
         t1 = time.time()
-
+        print(path)
         print('Loading time: {:.4f}'.format(t1 - t0))
 
         if len(y_train.shape) > 1:
@@ -267,6 +271,8 @@ else:
     cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet)
     cluster_training_data(X_test2, y_test2,objectnet_to_imagenet)
 
+# first scenario: train on imagenet, validate on ObjectNet, calculate accuracy only for samples from known classes
+# first scenario: train on objectnet, validate on ObjectNet
 # ResNet50
 # k-means: 0.0370
 # PCA+k-means: 0.223
