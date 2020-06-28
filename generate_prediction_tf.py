@@ -15,6 +15,7 @@ from tqdm import tqdm, trange
 
 imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
 imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
+objectnet_path = '/home/chaimb/objectnet-1.0'
 
 
 #%%
@@ -45,6 +46,7 @@ def download_file(url, filename=False, verbose=False):
 IMAGE_SHAPE = (224, 224)
 train_dir = pathlib.Path(os.path.join(imagenet_path, 'train'))
 val_dir = pathlib.Path(os.path.join(imagenet_path, 'val'))
+object_dir = pathlib.Path(os.path.join(objectnet_path, 'images'))
 
 #%%
 
@@ -64,7 +66,7 @@ name_map = {}
 name_to_num = {}
 for r in response:
     name_map[response[r][0]] = response[r][1]
-    name_to_num[response[r][1]] =  response[r][0]
+    name_to_num[response[r][1]] = response[r][0]
 
 
 #%%
@@ -96,8 +98,12 @@ def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
         img = tf.cast(img, tf.float32) / (255. / 2.) - 1
     else:
         img = tf.image.convert_image_dtype(img, tf.float32)
+    if IMG_HEIGHT == 256:
+        SIZE = 293
+    else:
+        SIZE = 256
     # resize the image to the desired size.
-    return tf.image.resize(img, [IMG_HEIGHT, IMG_WIDTH])
+    return tf.image.central_crop(tf.image.resize(img, [SIZE, SIZE]), 0.875)
 
 
 def process_path(file_path, bbg=False):
@@ -139,7 +145,13 @@ def get_datasets(bbg=False):
     labeled_val_ds = list_val_ds.map(process, num_parallel_calls=8)
 
     val_ds = prepare_for_eval(labeled_val_ds, BATCH_SIZE)
-    return train_ds, val_ds
+
+    list_obj_ds = tf.data.Dataset.list_files(str(object_dir / '*/*'))
+    # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
+    labeled_obj_ds = list_obj_ds.map(process, num_parallel_calls=8)
+
+    obj_ds = prepare_for_eval(labeled_obj_ds, BATCH_SIZE)
+    return train_ds, val_ds, obj_ds
 
 
 #%%
@@ -234,7 +246,7 @@ def eval(model, ds):
 #%%
 model = 'resnet152x3_simclr2'
 #%%
-train_ds, val_ds = get_datasets(bbg=model in ['revnet50x4_bigbigan'])
+train_ds, val_ds, obj_ds = get_datasets(bbg=model in ['revnet50x4_bigbigan'])
 image_batch, label_batch = next(iter(train_ds))
 show_batch(image_batch.numpy(), label_batch.numpy())
 
@@ -251,9 +263,10 @@ def eval_and_save(model='resnet50_simclr'):
     mdl = get_model(model)
     train_embs, train_labs = eval(mdl, train_ds)
     val_embs, val_labs = eval(mdl, val_ds)
+    obj_embs, obj_labs = eval(mdl, obj_ds)
     os.makedirs('./results', exist_ok=True)
     np.savez(os.path.join('./results', model + '.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
-             val_labs=val_labs)
+             val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 
 eval_and_save(model)
