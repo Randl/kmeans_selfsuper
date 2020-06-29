@@ -52,10 +52,12 @@ object_dir = pathlib.Path(os.path.join(objectnet_path, 'images'))
 
 assert val_dir.exists()
 assert train_dir.exists()
+assert object_dir.exists()
 
 #%%
 
 CLASS_NAMES = np.array([item.name for item in train_dir.glob('*') if item.name != "LICENSE.txt"])
+CLASS_NAMES_OBJ = np.array([item.name for item in object_dir.glob('*') if item.name != "LICENSE.txt"])
 
 #%%
 
@@ -90,6 +92,13 @@ def get_label(file_path):
     return parts[-2] == CLASS_NAMES
 
 
+def get_label_objectnet(file_path):
+    # convert the path to a list of path components
+    parts = tf.strings.split(file_path, os.path.sep)
+    # The second to last is the class-directory
+    return parts[-2] == CLASS_NAMES_OBJ
+
+
 def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
     # convert the compressed string to a 3D uint8 tensor
     img = tf.image.decode_jpeg(img, channels=3)
@@ -106,8 +115,8 @@ def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
     return tf.image.central_crop(tf.image.resize(img, [SIZE, SIZE]), 0.875)
 
 
-def process_path(file_path, bbg=False):
-    label = get_label(file_path)
+def process_path(file_path, bbg=False, label_function=get_label):
+    label = label_function(file_path)
     # load the raw data from the file as a string
     img = tf.io.read_file(file_path)
     if bbg:
@@ -132,7 +141,8 @@ def prepare_for_eval(ds, batch_size):
 
 def get_datasets(bbg=False):
     BATCH_SIZE = 32
-    process = partial(process_path, bbg=bbg)
+    process = partial(process_path, bbg=bbg, label_function=get_label)
+    process_obj = partial(process_path, bbg=bbg, label_function=get_label_objectnet)
 
     list_ds = tf.data.Dataset.list_files(str(train_dir / '*/*'))
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
@@ -148,7 +158,7 @@ def get_datasets(bbg=False):
 
     list_obj_ds = tf.data.Dataset.list_files(str(object_dir / '*/*'))
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
-    labeled_obj_ds = list_obj_ds.map(process, num_parallel_calls=8)
+    labeled_obj_ds = list_obj_ds.map(process_obj, num_parallel_calls=8)
 
     obj_ds = prepare_for_eval(labeled_obj_ds, BATCH_SIZE)
     return train_ds, val_ds, obj_ds
@@ -283,6 +293,8 @@ show_batch(image_batch.numpy(), label_batch.numpy())
 num_elements = tf.data.experimental.cardinality(train_ds).numpy()
 print(num_elements)
 num_elements = tf.data.experimental.cardinality(val_ds).numpy()
+print(num_elements)
+num_elements = tf.data.experimental.cardinality(obj_ds).numpy()
 print(num_elements)
 
 

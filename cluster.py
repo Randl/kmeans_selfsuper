@@ -224,7 +224,7 @@ else:
         print('Loading time: {:.6f}'.format(t1 - t0))
 
         if len(y_train.shape) > 1:
-            y_train, y_test = y_train.argmax(1), y_test.argmax(1)
+            y_train, y_test, y_test2 = y_train.argmax(1), y_test.argmax(1), y_test2.argmax(1)
         transformer = train_pca(X_train)
         X_train, X_test = transform_pca(X_train, transformer), transform_pca(X_test, transformer)
         gc.collect()
@@ -236,14 +236,15 @@ else:
         print(filename)
         X_train, y_train, X_test, y_test, X_test2, y_test2 = data['train_embs'], data['train_labs'], data['val_embs'], \
                                                              data['val_labs'], data['obj_embs'], data['obj_labs']
-        if len(y_train.shape) > 1:
-            y_train, y_test = y_train.argmax(1), y_test.argmax(1)
+        print(y_test2.shape, y_test2, y_test2.max())
+        if len(y_test2.shape) > 1:
+            y_test2 = y_test2.argmax(1)
         t1 = time.time()
         print('Loading time: {:.6f}'.format(t1 - t0))
     if args.n_components is not None:
-        X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,
-                                                                                                  :args.n_components]
+        X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,:args.n_components]
 
+    print(y_test2.shape, y_test2, y_test2.max())
     objectnet_path = '/home/chaimb/objectnet-1.0'
     imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(
