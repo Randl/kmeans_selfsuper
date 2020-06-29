@@ -104,7 +104,6 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
                   val_maj_assignment=None, objectnet=False, imagenet_to_objectnet=None, objectnet_to_imagenet=None):
     if objectnet:
         C, y_pred, y_true = get_cost_matrix_objectnet(y_pred, y_true, objectnet_to_imagenet)
-        # print(C.sum(), C)
         train_lin_assignment = imagenet_assignment_to_objectnet(*train_lin_assignment, imagenet_to_objectnet)
         train_maj_assignment = imagenet_assignment_to_objectnet(*train_maj_assignment, imagenet_to_objectnet)
     else:
@@ -127,9 +126,9 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
     ami = sklearn.metrics.adjusted_mutual_info_score(y_true, y_pred)
     fm = sklearn.metrics.fowlkes_mallows_score(y_true, y_pred)
 
-    print("{}: ARI {:.6f}\tV {:.6f}\tAMI {:.6f}\tFM {:.6f}".format(message, ari, v_measure, ami, fm))
-    print("{}: ACC TR L {:.6f}\tACC TR M {:.6f}\t"
-          "ACC VA L {:.6f}\tACC VA M {:.6f}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
+    print("{}: ARI {:.5e}\tV {:.5e}\tAMI {:.5e}\tFM {:.5e}".format(message, ari, v_measure, ami, fm))
+    print("{}: ACC TR L {:.5e}\tACC TR M {:.5e}\t"
+          "ACC VA L {:.5e}\tACC VA M {:.5e}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
 
     if message == 'ont':  # TODO
         both = np.zeros(313, dtype=bool)
@@ -139,7 +138,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
         ri, ci = train_lin_assignment
         acc_both = accuracy_from_assignment(C, ri[both], ci[both], C[:, ci[both]].sum())
         acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], C[:, ci[~both]].sum())
-        print("{}: ACC both {:.6f}\tACC obj {:.6f}".format(message, acc_both, acc_obj))
+        print("{}: ACC both {:.5e}\tACC obj {:.5e}".format(message, acc_both, acc_obj))
 
 
 def train_pca(X_train):
@@ -244,7 +243,6 @@ else:
     if args.n_components is not None:
         X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,:args.n_components]
 
-    print(y_test2.shape, y_test2, y_test2.max())
     objectnet_path = '/home/chaimb/objectnet-1.0'
     imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
     val_loader, imagenet_to_objectnet, objectnet_to_imagenet, objectnet_both, imagenet_both = get_loaders_objectnet(

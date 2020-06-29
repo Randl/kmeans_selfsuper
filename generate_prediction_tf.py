@@ -236,6 +236,15 @@ def get_revnet50x4_bigbigan():
     return revnet50x4
 
 
+def get_resnet50_bigbigan():
+    module_path = 'https://tfhub.dev/deepmind/bigbigan-resnet50/1'  # ResNet-50
+    resnet50 = tf.keras.Sequential([
+        hub.KerasLayer(module_path, signature='encode')
+    ])
+
+    return resnet50
+
+
 #%%
 models = ['resnet50_simclr', 'resnet50x4_simclr', 'revnet50x4_bigbigan', 'resnet50_simclr2', 'resnet152_simclr2',
           'resnet152x3_simclr2']
@@ -248,6 +257,8 @@ def get_model(model='resnet50_simclr'):
         return get_resnet50x4_simclr()
     elif model == 'revnet50x4_bigbigan':
         return get_revnet50x4_bigbigan()
+    elif model == 'resnet50_bigbigan':
+        return get_resnet50_bigbigan()
     elif model == 'resnet50_simclr2':
         return get_resnet50_simclrv2()
     elif model == 'resnet152_simclr2':
