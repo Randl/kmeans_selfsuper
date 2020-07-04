@@ -108,7 +108,7 @@ def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
     else:
         img = tf.image.convert_image_dtype(img, tf.float32)
     if IMG_HEIGHT == 256:
-        SIZE = 293
+        SIZE = 292
     else:
         SIZE = 256
     # resize the image to the desired size.
@@ -290,7 +290,7 @@ def eval(model, ds):
 
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnet50_simclr2',
-                    help='Model: one of' + ', '.join(models))
+                    help='Model: one of ' + ', '.join(models))
 args = parser.parse_args()
 
 model = args.model

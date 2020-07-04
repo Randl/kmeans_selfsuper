@@ -1,5 +1,6 @@
 import argparse
 import os
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -13,8 +14,7 @@ device, dtype = 'cuda:0', torch.float32
 
 def get_model(model='resnet50_infomin'):
     if model == 'resnet50_infomin':
-        parser = argparse.ArgumentParser(description='IM')
-        args = parser.parse_args()
+        args = SimpleNamespace()
 
         args.jigsaw = True
         args.arch, args.head, args.feat_dim = 'resnet50', 'mlp', 128
@@ -31,9 +31,8 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
-    if model == 'resnext152_infomin':
-        parser = argparse.ArgumentParser(description='IM')
-        args = parser.parse_args()
+    elif model == 'resnext152_infomin':
+        args = SimpleNamespace()
 
         args.jigsaw = True
         args.arch, args.head, args.feat_dim = 'resnext152v1', 'mlp', 128
@@ -50,9 +49,8 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
-    if model == 'resnet50_mocov2':
-        parser = argparse.ArgumentParser(description='IM')
-        args = parser.parse_args()
+    elif model == 'resnet50_mocov2':
+        args = SimpleNamespace()
 
         args.jigsaw = False
         args.arch, args.head, args.feat_dim = 'resnet50', 'linear', 128
@@ -69,6 +67,8 @@ def get_model(model='resnet50_infomin'):
 
         model = model.to(device=device)
         return model
+    else:
+        raise ValueError('Wrong model')
 
 
 def eval(model, loader):
@@ -106,10 +106,9 @@ def eval_and_save(model='resnet50_infomin'):
 
 
 models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2']
-
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
-                    help='Model: one of' + ', '.join(models))
+                    help='Model: one of ' + ', '.join(models))
 args = parser.parse_args()
 
 eval_and_save(args.model)
