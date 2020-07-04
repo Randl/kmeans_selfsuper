@@ -53,11 +53,11 @@ def get_model(model='resnet50_infomin'):
         args = SimpleNamespace()
 
         args.jigsaw = False
-        args.arch, args.head, args.feat_dim = 'resnet50', 'linear', 128
+        args.arch, args.head, args.feat_dim = 'resnet50', 'linear', 2048
         args.mem = 'moco'
         args.modal = 'RGB'
         model, _ = build_model(args)
-        cp = torch.load('checkpoints/InfoMin_resnext152v1_e200.pth')
+        cp = torch.load('checkpoints/MoCov2.pth')
 
         sd = cp['model']
         new_sd = {}
