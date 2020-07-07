@@ -107,7 +107,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
         train_lin_assignment = imagenet_assignment_to_objectnet(*train_lin_assignment, imagenet_to_objectnet)
         train_maj_assignment = imagenet_assignment_to_objectnet(*train_maj_assignment, imagenet_to_objectnet)
     else:
-        C = get_cost_matrix(y_pred, y_true)
+        C = get_cost_matrix(y_pred, y_true,n_clusters)
 
     # for r,c in zip(*train_lin_assignment):
     #     print(r,c)
@@ -160,10 +160,10 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
             minib_k_means = minib_k_means.partial_fit(batch)
 
         pred = minib_k_means.predict(X_train)
-        C_train = get_cost_matrix(pred, y_train)
+        C_train = get_cost_matrix(pred, y_train,n_clusters)
 
         y_pred = minib_k_means.predict(X_test)
-        C_val = get_cost_matrix(y_pred, y_test)
+        C_val = get_cost_matrix(y_pred, y_test,n_clusters)
 
         y_pred2 = minib_k_means.predict(X_test2)
         C_val2, _, _ = get_cost_matrix_objectnet(y_pred2, y_test2, objectnet_to_imagenet)
@@ -185,7 +185,7 @@ def cluster_training_data(X_train, y_train, objectnet_to_imagenet):
             minib_k_means = minib_k_means.partial_fit(batch)
 
         pred = minib_k_means.predict(X_train)
-        C_train = get_cost_matrix(pred, y_train, nc=313)
+        C_train = get_cost_matrix(pred, y_train, nc=n_clusters_objectnet)
 
         print_metrics('ont', pred, y_train, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
                       objectnet_to_imagenet=objectnet_to_imagenet)
