@@ -144,19 +144,19 @@ def get_datasets(bbg=False):
     process = partial(process_path, bbg=bbg, label_function=get_label)
     process_obj = partial(process_path, bbg=bbg, label_function=get_label_objectnet)
 
-    list_ds = tf.data.Dataset.list_files(str(train_dir / '*/*'))
+    list_ds = tf.data.Dataset.list_files(str(train_dir / '*/*'), shuffle=False)
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
     labeled_ds = list_ds.map(process, num_parallel_calls=8)
 
     train_ds = prepare_for_eval(labeled_ds, BATCH_SIZE)
 
-    list_val_ds = tf.data.Dataset.list_files(str(val_dir / '*/*'))
+    list_val_ds = tf.data.Dataset.list_files(str(val_dir / '*/*'), shuffle=False)
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
     labeled_val_ds = list_val_ds.map(process, num_parallel_calls=8)
 
     val_ds = prepare_for_eval(labeled_val_ds, BATCH_SIZE)
 
-    list_obj_ds = tf.data.Dataset.list_files(str(object_dir / '*/*'))
+    list_obj_ds = tf.data.Dataset.list_files(str(object_dir / '*/*'), shuffle=False)
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
     labeled_obj_ds = list_obj_ds.map(process_obj, num_parallel_calls=8)
 
