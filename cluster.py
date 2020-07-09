@@ -164,10 +164,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
 
     best = get_best_clusters(C, k=3)
     worst = get_worst_clusters(C, k=3)
-    for b in best:
-        print_cluster(b, y_pred, message + ' best:')
-    for w in worst:
-        print_cluster(w, y_pred, message + ' worst:')
+    return best, worst
 
 
 def train_pca(X_train):
@@ -197,11 +194,27 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
         y_pred2 = minib_k_means.predict(X_test2)
         C_val2, _, _ = get_cost_matrix_objectnet(y_pred2, y_test2, objectnet_to_imagenet)
 
-        print_metrics('val', y_pred, y_test, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
-                      assign_classes_hungarian(C_val), assign_classes_majority(C_val))
-        print_metrics('on', y_pred2, y_test2, assign_classes_hungarian(C_train), assign_classes_majority(C_train),
-                      assign_classes_hungarian(C_val2), assign_classes_majority(C_val2), objectnet=True,
-                      imagenet_to_objectnet=imagenet_to_objectnet, objectnet_to_imagenet=objectnet_to_imagenet)
+        best_im, worst_im = print_metrics('val', y_pred, y_test, assign_classes_hungarian(C_train),
+                                          assign_classes_majority(C_train), assign_classes_hungarian(C_val),
+                                          assign_classes_majority(C_val))
+        best_obj, worst_obj = print_metrics('on', y_pred2, y_test2, assign_classes_hungarian(C_train),
+                                            assign_classes_majority(C_train), assign_classes_hungarian(C_val2),
+                                            assign_classes_majority(C_val2), objectnet=True,
+                                            imagenet_to_objectnet=imagenet_to_objectnet,
+                                            objectnet_to_imagenet=objectnet_to_imagenet)
+
+        for i, cli in enumerate(best_im):
+            print_cluster(cli, y_pred, 'best imagenet cluster #{}, imagenet index:'.format(i))
+            print_cluster(cli, y_pred2, 'best imagenet cluster #{}, objectnet index:'.format(i))
+        for i, cli in enumerate(worst_im):
+            print_cluster(cli, y_pred, 'worst imagenet cluster #{}, imagenet index:'.format(i))
+            print_cluster(cli, y_pred2, 'worst imagenet cluster #{}, objectnet index:'.format(i))
+        for i, cli in enumerate(best_obj):
+            print_cluster(cli, y_pred, 'best objectnet cluster #{}, imagenet index:'.format(i))
+            print_cluster(cli, y_pred2, 'best objectnet cluster #{}, objectnet index:'.format(i))
+        for i, cli in enumerate(worst_obj):
+            print_cluster(cli, y_pred, 'worst objectnet cluster #{}, imagenet index:'.format(i))
+            print_cluster(cli, y_pred2, 'worst objectnet cluster #{}, objectnet index:'.format(i))
 
 
 def cluster_training_data(X_train, y_train, objectnet_to_imagenet):
