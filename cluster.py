@@ -56,6 +56,26 @@ def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
     return C, np.array(nyp), np.array(ny)
 
 
+def get_best_clusters(C, k=3):
+    Cpart = C / C.sum(axis=1, keepdims=True)
+    ind = np.unravel_index(np.argsort(Cpart, axis=None)[::-1], Cpart.shape)[0]  # indices of good clusters
+    _, idx = np.unique(ind, return_index=True)
+    cluster_idx = ind[np.sort(idx)]  # unique indices of good clusters
+    good_clusters = cluster_idx[:k]
+    print('Best clusters accuracy: {}'.format(Cpart[good_clusters].max(axis=1)))
+    return good_clusters
+
+
+def get_worst_clusters(C, k=3):
+    cluster_idx = np.argsort(C.std(axis=1))  # low std -- closer to uniform
+    return cluster_idx[:k]
+
+
+def print_cluster(ci, y_pred, text):
+    idx = np.where(y_pred == ci)[0]
+    print('{}: {}'.format(text, idx))
+
+
 def assign_classes_hungarian(C):
     row_ind, col_ind = linear_sum_assignment(C, maximize=True)
     ri, ci = np.arange(C.shape[0]), np.zeros(C.shape[0])
@@ -107,7 +127,7 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
         train_lin_assignment = imagenet_assignment_to_objectnet(*train_lin_assignment, imagenet_to_objectnet)
         train_maj_assignment = imagenet_assignment_to_objectnet(*train_maj_assignment, imagenet_to_objectnet)
     else:
-        C = get_cost_matrix(y_pred, y_true,n_clusters)
+        C = get_cost_matrix(y_pred, y_true, n_clusters)
 
     # for r,c in zip(*train_lin_assignment):
     #     print(r,c)
@@ -130,15 +150,24 @@ def print_metrics(message, y_pred, y_true, train_lin_assignment, train_maj_assig
     print("{}: ACC TR L {:.5e}\tACC TR M {:.5e}\t"
           "ACC VA L {:.5e}\tACC VA M {:.5e}".format(message, acc_tr_lin, acc_tr_maj, acc_va_lin, acc_va_maj))
 
-    if message == 'ont':  # TODO
-        both = np.zeros(313, dtype=bool)
-        y = [s for s in objectnet_to_imagenet if len(objectnet_to_imagenet[s]) > 0]
-        both[y] = 1
-
+    if message == 'ont':
         ri, ci = train_lin_assignment
+        both = np.zeros(len(ci), dtype=bool)
+        y = [s for s in objectnet_to_imagenet if len(objectnet_to_imagenet[s]) > 0]
+        for i in range(len(ci)):
+            if ci[i] in y:
+                both[i] = 1
+
         acc_both = accuracy_from_assignment(C, ri[both], ci[both], C[:, ci[both]].sum())
         acc_obj = accuracy_from_assignment(C, ri[~both], ci[~both], C[:, ci[~both]].sum())
         print("{}: ACC both {:.5e}\tACC obj {:.5e}".format(message, acc_both, acc_obj))
+
+    best = get_best_clusters(C, k=3)
+    worst = get_worst_clusters(C, k=3)
+    for b in best:
+        print_cluster(b, y_pred, message + ' best:')
+    for w in worst:
+        print_cluster(w, y_pred, message + ' worst:')
 
 
 def train_pca(X_train):
@@ -160,10 +189,10 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
             minib_k_means = minib_k_means.partial_fit(batch)
 
         pred = minib_k_means.predict(X_train)
-        C_train = get_cost_matrix(pred, y_train,n_clusters)
+        C_train = get_cost_matrix(pred, y_train, n_clusters)
 
         y_pred = minib_k_means.predict(X_test)
-        C_val = get_cost_matrix(y_pred, y_test,n_clusters)
+        C_val = get_cost_matrix(y_pred, y_test, n_clusters)
 
         y_pred2 = minib_k_means.predict(X_test2)
         C_val2, _, _ = get_cost_matrix_objectnet(y_pred2, y_test2, objectnet_to_imagenet)
@@ -241,7 +270,8 @@ else:
         t1 = time.time()
         print('Loading time: {:.6f}'.format(t1 - t0))
     if args.n_components is not None:
-        X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,:args.n_components]
+        X_train, X_test, X_test2 = X_train[:, :args.n_components], X_test[:, :args.n_components], X_test2[:,
+                                                                                                  :args.n_components]
 
     objectnet_path = '/home/chaimb/objectnet-1.0'
     imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
