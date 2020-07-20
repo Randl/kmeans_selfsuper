@@ -67,7 +67,8 @@ def get_best_clusters(C, k=3):
 
 
 def get_worst_clusters(C, k=3):
-    cluster_idx = np.argsort(C.std(axis=1))  # low std -- closer to uniform
+    Cpart = C / C.sum(axis=1, keepdims=True)
+    cluster_idx = np.argsort(Cpart.std(axis=1))  # low std -- closer to uniform
     return cluster_idx[:k]
 
 
@@ -181,7 +182,7 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
     minib_k_means = cluster.MiniBatchKMeans(n_clusters=n_clusters, batch_size=batch_size, max_no_improvement=None)
 
     for e in trange(epochs):
-        X_train, y_train = shuffle(X_train, y_train, random_state=0)
+        X_train, y_train = shuffle(X_train, y_train)
         for batch in batches(X_train, batch_size):
             minib_k_means = minib_k_means.partial_fit(batch)
 
@@ -222,7 +223,7 @@ def cluster_training_data(X_train, y_train, objectnet_to_imagenet):
                                             max_no_improvement=None)
 
     for e in trange(epochs):
-        X_train, y_train = shuffle(X_train, y_train, random_state=0)
+        X_train, y_train = shuffle(X_train, y_train)
         for batch in batches(X_train, batch_size):
             minib_k_means = minib_k_means.partial_fit(batch)
 
