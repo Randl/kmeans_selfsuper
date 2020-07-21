@@ -74,13 +74,13 @@ def get_model(model='resnet50_infomin'):
 def eval(model, loader):
     reses = []
     labs = []
+    with torch.no_grad():
+        for batch_idx, (data, target) in enumerate(tqdm(loader)):
+            data, target = data.to(device=device, dtype=dtype), target.to(device=device)
 
-    for batch_idx, (data, target) in enumerate(tqdm(loader)):
-        data, target = data.to(device=device, dtype=dtype), target.to(device=device)
-
-        output = model.forward_features(data)
-        reses.append(output.detach().cpu().numpy())
-        labs.append(target.detach().cpu().numpy())
+            output = model.forward_features(data)
+            reses.append(output.detach().cpu().numpy())
+            labs.append(target.detach().cpu().numpy())
 
     rss = np.concatenate(reses, axis=0)
     lbs = np.concatenate(labs, axis=0)
@@ -91,9 +91,9 @@ imagenet_path = '/home/vista/Datasets/ILSVRC/Data/CLS-LOC'
 imagenet_path = '/home/chaimb/ILSVRC/Data/CLS-LOC'
 objectnet_path = '/home/chaimb/objectnet-1.0'
 
-
+bss = {'tf_efficientnet_l2_ns_475': 8, 'gluon_resnet152_v1s': 16, 'ig_resnext101_32x48d': 16}
 def eval_and_save(model='resnet50_infomin', dim=224):
-    mdl = torch.hub.load(gh, model, pretrained=True)
+    mdl = torch.hub.load(gh, model, pretrained=True).cuda()
     bs = 16
     train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, dim, 8, 1, 0)
     obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, dim, 8, 1, 0)
@@ -101,7 +101,7 @@ def eval_and_save(model='resnet50_infomin', dim=224):
     val_embs, val_labs = eval(mdl, val_loader)
     obj_embs, obj_labs = eval(mdl, obj_loader)
     os.makedirs('./results', exist_ok=True)
-    np.savez(os.path.join('./results', model + '.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
+    np.savez(os.path.join('./results', model + '_super.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
              val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 
