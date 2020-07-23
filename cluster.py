@@ -14,6 +14,7 @@ from sklearn.utils import shuffle
 from tqdm import trange, tqdm
 
 from torch_utils import get_loaders_objectnet
+
 np.set_printoptions(threshold=np.inf)
 
 model_names = set(filename.split('.')[0].replace('_pca', '') for filename in os.listdir('./results'))
@@ -58,25 +59,22 @@ def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
 
 
 def get_best_clusters(C, k=3):
-    Cpart = C / (C.sum(axis=1, keepdims=True)+1e-5)
+    Cpart = C / (C.sum(axis=1, keepdims=True) + 1e-5)
     Cpart[C.sum(axis=1) < 10, :] = 0
     #print('as', np.argsort(Cpart, axis=None)[::-1])
     ind = np.unravel_index(np.argsort(Cpart, axis=None)[::-1], Cpart.shape)[0]  # indices of good clusters
     _, idx = np.unique(ind, return_index=True)
     cluster_idx = ind[np.sort(idx)]  # unique indices of good clusters
     accs = Cpart.max(axis=1)[cluster_idx]
-    best_cnt = np.argmax(accs<0.99)
-    k = k if k>best_cnt else best_cnt
-    print('k',k)
     good_clusters = cluster_idx[:k]
     print('Best clusters accuracy: {}'.format(Cpart[good_clusters].max(axis=1)))
     return good_clusters
 
 
 def get_worst_clusters(C, k=3):
-    Cpart = C / (C.sum(axis=1, keepdims=True)+1e-5)
+    Cpart = C / (C.sum(axis=1, keepdims=True) + 1e-5)
     Cstd = Cpart.std(axis=1)
-    Cstd[C.sum(axis=1)<10] = 1000
+    Cstd[C.sum(axis=1) < 10] = 1000
     cluster_idx = np.argsort(Cstd)  # low std -- closer to uniform
     return cluster_idx[:k]
 
@@ -190,6 +188,7 @@ def train_pca(X_train):
 def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to_objectnet, objectnet_to_imagenet):
     minib_k_means = cluster.MiniBatchKMeans(n_clusters=n_clusters, batch_size=batch_size, max_no_improvement=None)
 
+    # TODO: save to csv
     for e in trange(epochs):
         X_train, y_train = shuffle(X_train, y_train)
         for batch in batches(X_train, batch_size):

@@ -99,7 +99,18 @@ def get_label_objectnet(file_path):
     return parts[-2] == CLASS_NAMES_OBJ
 
 
-def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
+def crop_center_and_resize(img, size, scale=0.875):
+    s = tf.shape(img)
+    w, h = s[0], s[1]
+    c = tf.maximum(w, h)
+    wn, hn = h / c * scale, w / c * scale
+    result = tf.image.crop_and_resize(tf.expand_dims(img, 0),
+                                      [[(1 - wn) / 2, (1 - hn) / 2, wn, hn]],
+                                      [0], [size, size])
+    return tf.squeeze(result, 0)
+
+
+def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False, crop=True):
     # convert the compressed string to a 3D uint8 tensor
     img = tf.image.decode_jpeg(img, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
@@ -112,7 +123,10 @@ def decode_img(img, IMG_HEIGHT=224, IMG_WIDTH=224, pm1=False):
     else:
         SIZE = 256
     # resize the image to the desired size.
-    return tf.image.central_crop(tf.image.resize(img, [SIZE, SIZE]), 0.875)
+    if crop:
+        return crop_center_and_resize(img, IMG_HEIGHT)
+    else:
+        return tf.image.resize_with_pad(img, IMG_HEIGHT, IMG_HEIGHT)
 
 
 def process_path(file_path, bbg=False, label_function=get_label):

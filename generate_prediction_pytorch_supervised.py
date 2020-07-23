@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import numpy as np
 import torch
 from tqdm import tqdm
-
+import torch.nn.functional as F
 from PyContrast.pycontrast.networks.build_backbone import build_model
 from torch_utils import get_loaders_imagenet, get_loaders_objectnet
 
@@ -79,6 +79,7 @@ def eval(model, loader):
             data, target = data.to(device=device, dtype=dtype), target.to(device=device)
 
             output = model.forward_features(data)
+            output = F.adaptive_avg_pool2d(output, output_size=(1,1)).view(output.shape[0], -1)
             reses.append(output.detach().cpu().numpy())
             labs.append(target.detach().cpu().numpy())
 
