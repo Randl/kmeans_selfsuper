@@ -30,7 +30,7 @@ def get_model(model='resnet50_infomin'):
         model.load_state_dict(new_sd, strict=False)  # no head, don't need linear model
 
         model = model.to(device=device)
-        return model
+        return model, {'mode:2'}
     elif model == 'resnext152_infomin':
         args = SimpleNamespace()
 
@@ -48,7 +48,7 @@ def get_model(model='resnet50_infomin'):
         model.load_state_dict(new_sd, strict=False)  # no head, don't need linear model
 
         model = model.to(device=device)
-        return model
+        return model, {'mode:2'}
     elif model == 'resnet50_mocov2':
         args = SimpleNamespace()
 
@@ -66,19 +66,23 @@ def get_model(model='resnet50_infomin'):
         model.load_state_dict(new_sd, strict=False)  # no head, don't need linear model
 
         model = model.to(device=device)
-        return model
+        return model, {'mode:2'}
+    elif model == 'resnet50_swav':
+        model = torch.hub.load('facebookresearch/swav', 'resnet50')
+        model = model.to(device=device)
+        return model, {}
     else:
         raise ValueError('Wrong model')
 
 
-def eval(model, loader):
+def eval(model, loader, kwargs):
     reses = []
     labs = []
 
     for batch_idx, (data, target) in enumerate(tqdm(loader)):
         data, target = data.to(device=device, dtype=dtype), target.to(device=device)
 
-        output = model.forward(data, mode=2)
+        output = model.forward(data, **kwargs)
         reses.append(output.detach().cpu().numpy())
         labs.append(target.detach().cpu().numpy())
 
@@ -93,19 +97,19 @@ objectnet_path = '/home/chaimb/objectnet-1.0'
 
 
 def eval_and_save(model='resnet50_infomin'):
-    mdl = get_model(model)
+    mdl, kwargs = get_model(model)
     bs = 32 if model in ['resnet50_infomin'] else 16
     train_loader, val_loader = get_loaders_imagenet(imagenet_path, bs, bs, 224, 8, 1, 0)
     obj_loader, _, _, _, _ = get_loaders_objectnet(objectnet_path, imagenet_path, bs, 224, 8, 1, 0)
-    train_embs, train_labs = eval(mdl, train_loader)
-    val_embs, val_labs = eval(mdl, val_loader)
-    obj_embs, obj_labs = eval(mdl, obj_loader)
+    train_embs, train_labs = eval(mdl, train_loader, kwargs)
+    val_embs, val_labs = eval(mdl, val_loader, kwargs)
+    obj_embs, obj_labs = eval(mdl, obj_loader, kwargs)
     os.makedirs('./results', exist_ok=True)
     np.savez(os.path.join('./results', model + '.npz'), train_embs=train_embs, train_labs=train_labs, val_embs=val_embs,
              val_labs=val_labs, obj_embs=obj_embs, obj_labs=obj_labs)
 
 
-models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2']
+models = ['resnet50_infomin', 'resnext152_infomin', 'resnet50_mocov2', 'resnet50_swav']
 parser = argparse.ArgumentParser(description='IM')
 parser.add_argument('--model', dest='model', type=str, default='resnext152_infomin',
                     help='Model: one of ' + ', '.join(models))

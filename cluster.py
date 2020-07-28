@@ -61,13 +61,14 @@ def get_cost_matrix_objectnet(y_pred, y, objectnet_to_imagenet):
 def get_best_clusters(C, k=3):
     Cpart = C / (C.sum(axis=1, keepdims=True) + 1e-5)
     Cpart[C.sum(axis=1) < 10, :] = 0
-    #print('as', np.argsort(Cpart, axis=None)[::-1])
+    # print('as', np.argsort(Cpart, axis=None)[::-1])
     ind = np.unravel_index(np.argsort(Cpart, axis=None)[::-1], Cpart.shape)[0]  # indices of good clusters
     _, idx = np.unique(ind, return_index=True)
     cluster_idx = ind[np.sort(idx)]  # unique indices of good clusters
     accs = Cpart.max(axis=1)[cluster_idx]
     good_clusters = cluster_idx[:k]
     print('Best clusters accuracy: {}'.format(Cpart[good_clusters].max(axis=1)))
+    print('Best clusters classes: {}'.format(Cpart[good_clusters].argmax(axis=1)))
     return good_clusters
 
 
@@ -218,12 +219,13 @@ def cluster_data(X_train, y_train, X_test, y_test, X_test2, y_test2, imagenet_to
         for i, cli in enumerate(worst_im):
             print_cluster(cli, y_pred, 'worst imagenet cluster #{}, imagenet index:'.format(i))
             print_cluster(cli, y_pred2, 'worst imagenet cluster #{}, objectnet index:'.format(i))
-        for i, cli in enumerate(best_obj):
-            print_cluster(cli, y_pred, 'best objectnet cluster #{}, imagenet index:'.format(i))
-            print_cluster(cli, y_pred2, 'best objectnet cluster #{}, objectnet index:'.format(i))
-        for i, cli in enumerate(worst_obj):
-            print_cluster(cli, y_pred, 'worst objectnet cluster #{}, imagenet index:'.format(i))
-            print_cluster(cli, y_pred2, 'worst objectnet cluster #{}, objectnet index:'.format(i))
+        if False:
+            for i, cli in enumerate(best_obj):
+                print_cluster(cli, y_pred, 'best objectnet cluster #{}, imagenet index:'.format(i))
+                print_cluster(cli, y_pred2, 'best objectnet cluster #{}, objectnet index:'.format(i))
+            for i, cli in enumerate(worst_obj):
+                print_cluster(cli, y_pred, 'worst objectnet cluster #{}, imagenet index:'.format(i))
+                print_cluster(cli, y_pred2, 'worst objectnet cluster #{}, objectnet index:'.format(i))
 
 
 def cluster_training_data(X_train, y_train, objectnet_to_imagenet):
@@ -286,7 +288,7 @@ else:
         print(filename)
         X_train, y_train, X_test, y_test, X_test2, y_test2 = data['train_embs'], data['train_labs'], data['val_embs'], \
                                                              data['val_labs'], data['obj_embs'], data['obj_labs']
-        #print(y_test2.shape, y_test2, y_test2.max())
+        # print(y_test2.shape, y_test2, y_test2.max())
         if len(y_test2.shape) > 1:
             y_test2 = y_test2.argmax(1)
         t1 = time.time()

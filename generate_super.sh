@@ -1,0 +1,3 @@
+python3 generate_prediction_pytorch_supervised.py --model tf_efficientnet_l2_ns_475
+python3 generate_prediction_pytorch_supervised.py --model gluon_resnet152_v1s
+python3 generate_prediction_pytorch_supervised.py --model ig_resnext101_32x48d
