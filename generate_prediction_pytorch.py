@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import torch
+from torch import nn
 from tqdm import tqdm
 
 from PyContrast.pycontrast.networks.build_backbone import build_model
@@ -69,6 +70,8 @@ def get_model(model='resnet50_infomin'):
         return model
     elif model == 'resnet50_swav':
         model = torch.hub.load('facebookresearch/swav', 'resnet50')
+        modules = list(model.children())[:-1]
+        model = nn.Sequential(*modules)
         model = model.to(device=device)
         return model
     else:
@@ -82,7 +85,7 @@ def eval_swav(model, loader):
     for batch_idx, (data, target) in enumerate(tqdm(loader)):
         data, target = data.to(device=device, dtype=dtype), target.to(device=device)
 
-        output = model.forward_backbone(data)
+        output = model.forward(data)
         reses.append(output.detach().cpu().numpy())
         labs.append(target.detach().cpu().numpy())
 

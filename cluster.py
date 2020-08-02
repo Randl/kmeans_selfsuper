@@ -277,6 +277,7 @@ else:
 
         if len(y_train.shape) > 1:
             y_train, y_test, y_test2 = y_train.argmax(1), y_test.argmax(1), y_test2.argmax(1)
+        X_train, y_train, X_test, y_test, X_test2, y_test2 = X_train.squeeze(), y_train.squeeze(), X_test.squeeze(), y_test.squeeze(), X_test2.squeeze(), y_test2.squeeze()
         transformer = train_pca(X_train)
         X_train, X_test = transform_pca(X_train, transformer), transform_pca(X_test, transformer)
         gc.collect()
