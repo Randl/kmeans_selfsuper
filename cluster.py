@@ -254,14 +254,7 @@ def transform_pca(X, transformer):
 
 generate = False
 if generate:
-    t0 = time.time()
-    X, y = make_blobs(n_samples=(train_size + val_size), centers=n_classes, n_features=n_features,
-                      center_box=(-0.5, 0.5), random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=val_size, random_state=42)
-    t1 = time.time()
-
-    print('Generation time: {:.6f}'.format(t1 - t0))
-    cluster_data(X_train, y_train, X_test, y_test)
+    pass
 else:
     filename = 'results/' + args.model + '_pca.npz'
     if not os.path.exists(filename):
