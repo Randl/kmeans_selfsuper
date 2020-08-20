@@ -7,3 +7,5 @@ tensorflow_hub>=0.8,<0.9
 tensorflow-estimator>=2.2,<2.3
 tensorflow_datasets
 tensorboard_logger
+torch>=1.5,<1.6
+torchvision
