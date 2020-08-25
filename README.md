@@ -1,4 +1,4 @@
-#Self-Supervised Learning for Large-Scale Unsupervised Image Clustering
+# Self-Supervised Learning for Large-Scale Unsupervised Image Clustering
 
 This is code to run experiments for paper ["Self-Supervised Learning for Large-Scale Unsupervised Image Clustering"](https://arxiv.org/abs/2008.10312).
 
@@ -7,6 +7,7 @@ For part of the models, you'll need to download the chekpoints manually:
 - SimCLR models: https://github.com/google-research/simclr
 - MoCo and InfoMin models: https://github.com/HobbitLong/PyContrast/blob/master/pycontrast/docs/MODEL_ZOO.md
 - SwAV models: https://github.com/facebookresearch/swav
+
 and put them in chekpoint folder.
 
 For SimCLRv2, BigBiGAN as well as supervised models checkpoints are downloaded automatically.
@@ -35,7 +36,7 @@ python3 generate_prediction_tf.py --model resnet152x3_simclr2
 python3 generate_prediction_tf.py --model resnet50_bigbigan
 python3 generate_prediction_tf.py --model revnet50x4_bigbigan
 ```
-For InfoMIn, MoCo v2 and SwAV, run
+For InfoMin, MoCo v2 and SwAV, run
 ```
 python3 generate_prediction_pytorch.py --model resnext152_infomin
 python3 generate_prediction_pytorch.py --model resnet50_infomin
