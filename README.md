@@ -1,6 +1,6 @@
 #Self-Supervised Learning for Large-Scale Unsupervised Image Clustering
 
-This is code to run experiments for paper ["Self-Supervised Learning for Large-Scale Unsupervised Image Clustering"](https://arxiv.org/abs/2008.XXXXX).
+This is code to run experiments for paper ["Self-Supervised Learning for Large-Scale Unsupervised Image Clustering"](https://arxiv.org/abs/2008.10312).
 
 # Running the code
 For part of the models, you'll need to download the chekpoints manually:
@@ -69,8 +69,8 @@ If you found the paper or the code useful, please cite it. You can use following
 @article{zheltonozhskii2020unsupevised,
   title={Self-Supervised Learning for Large-Scale Unsupervised Image Clustering},
   author={Zheltonozhskii, Evgenii and Baskin, Chaim and Bronstein, Alex M. and Mendelson, Avi},
-  journal={arXiv preprint arXiv:2008.XXXXX},
+  journal={arXiv preprint arXiv:2008.10312},
   year={2020},
-  url = {http://arxiv.org/abs/2008.XXXXX}
+  url = {https://arxiv.org/abs/2008.10312}
 }
 ```
