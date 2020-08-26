@@ -1,4 +1,5 @@
 # Self-Supervised Learning for Large-Scale Unsupervised Image Clustering
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/self-supervised-learning-for-large-scale/unsupervised-image-classification-on-imagenet)](https://paperswithcode.com/sota/unsupervised-image-classification-on-imagenet?p=self-supervised-learning-for-large-scale)
 
 This is code to run experiments for paper ["Self-Supervised Learning for Large-Scale Unsupervised Image Clustering"](https://arxiv.org/abs/2008.10312).
 
