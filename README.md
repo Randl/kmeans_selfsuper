@@ -1,4 +1,5 @@
 # Self-Supervised Learning for Large-Scale Unsupervised Image Clustering
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/self-supervised-learning-for-large-scale/unsupervised-image-classification-on)](https://paperswithcode.com/sota/unsupervised-image-classification-on?p=self-supervised-learning-for-large-scale)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/self-supervised-learning-for-large-scale/unsupervised-image-classification-on-imagenet)](https://paperswithcode.com/sota/unsupervised-image-classification-on-imagenet?p=self-supervised-learning-for-large-scale)
 
 This is code to run experiments for paper ["Self-Supervised Learning for Large-Scale Unsupervised Image Clustering"](https://arxiv.org/abs/2008.10312).
@@ -68,11 +69,14 @@ python3 cluster.py --model resnet152_simclr2 --n-components 512
 # Citing the paper
 If you found the paper or the code useful, please cite it. You can use following bibtex entry:
 ```
-@article{zheltonozhskii2020unsupevised,
-  title={Self-Supervised Learning for Large-Scale Unsupervised Image Clustering},
-  author={Zheltonozhskii, Evgenii and Baskin, Chaim and Bronstein, Alex M. and Mendelson, Avi},
-  journal={arXiv preprint arXiv:2008.10312},
-  year={2020},
-  url = {https://arxiv.org/abs/2008.10312}
+@article{zheltonozhskii2020unsupervised,
+  title = {Self-Supervised Learning for Large-Scale Unsupervised Image Clustering},
+  author = {Zheltonozhskii, Evgenii and Baskin, Chaim and Bronstein, Alex M. and Mendelson, Avi},
+  journal = {NeurIPS Self-Supervised Learning Workshop},
+  year = {2020},
+  month = aug,
+  url = {https://arxiv.org/abs/2008.10312},
+  code = {https://github.com/Randl/kmeans_selfsuper},
+  arxiv = {2008.10312},
 }
 ```
